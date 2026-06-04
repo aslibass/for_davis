@@ -1,66 +1,105 @@
 ---
 name: ollama-supervisor
-description: Orchestration pattern for using Claude as supervisor and Ollama as worker. Apply this whenever building software to minimise Claude credit usage. Claude plans, routes, judges output quality, and handles complex reasoning. Ollama executes code generation, review, testing, and refactoring. Documented to achieve 8-10x cost reduction.
+description: Two-tier supervisor-worker orchestration for minimising cost while preserving quality. Primary strategy: Claude model-tier routing (Opus → Sonnet → Haiku). Secondary strategy: Ollama as free local worker for single-file execution. Apply this at the start of every coding session.
 ---
 
-# Ollama Supervisor Pattern
+# Supervisor-Worker Orchestration
 
-Claude credits are expensive. Ollama runs locally and costs nothing. The default posture is: Ollama executes, Claude supervises. Route every task to Ollama first. Escalate to Claude only when Ollama is insufficient or the task genuinely requires deep multi-file reasoning.
-
-Research shows this pattern achieves **8–10x cost reduction** while maintaining output quality on the tasks that matter.
-
----
-
-## Role definitions
-
-**Claude — supervisor**
-Plans the approach, decomposes tasks, routes to Ollama, reads and judges Ollama's output, makes architectural decisions, and synthesises results. Claude's advantage is multi-file context, long-range reasoning, and domain nuance. Use it for those things.
-
-**Ollama — worker**
-Executes well-defined, bounded tasks: code generation, file review, bug fixing, refactoring, test writing. Ollama performs at near-Claude level on single-file, clearly-specified tasks. Its weakness is multi-file context and complex reasoning chains — don't give it those.
+Two complementary strategies for cost reduction. Use them in combination: Claude-tier routing is the primary approach; Ollama is the free fallback for bounded execution tasks.
 
 ---
 
-## Task routing
+## Strategy 1 — Claude Model-Tier Routing (primary)
 
-### Route to Ollama (always try first)
+Route work across Claude models by cognitive demand. Tiering across Opus / Sonnet / Haiku achieves **60–80% cost reduction** compared to running Opus everywhere, while keeping all work at Claude quality.
+
+### Role definitions
+
+| Model | Role | When to use |
+| ----- | ---- | ----------- |
+| **Opus** | Architect + reviewer | Phase planning, design system decisions, expert panel invocations, security review, cross-file architectural reasoning, judging output from other models |
+| **Sonnet** | Implementer | Complex multi-file feature work (booking wizard, search/filter, admin dashboard), anything requiring context across 3+ files simultaneously |
+| **Haiku** | Executor | Single-file boilerplate (route files, schema tables, simple form components, type definitions, straightforward refactors) |
+
+### How to switch in Claude Code
+
+Use `/model` at phase boundaries — not mid-file. Switch to Opus at the start of a phase to plan and decompose; hand off to Sonnet/Haiku for execution; bring Opus back to review before closing the phase.
+
+```bash
+/model opus    ← planning, design decisions, expert panels, security
+/model sonnet  ← complex feature implementation
+/model haiku   ← boilerplate, single-file tasks, tests
+```
+
+### Routing heuristic
+
+- **Opus if:** the task requires holding the whole system in mind simultaneously, involves security/auth decisions, or you are making a decision that is hard to reverse.
+- **Sonnet if:** the task spans 2–5 files and requires understanding how they interact, or the component is complex enough that Haiku would hallucinate interfaces.
+- **Haiku if:** the task fits in one file with a clear spec and you could write the prompt in under 50 words.
+
+### Phase routing plan for this project
+
+| Phase | Planning model | Execution model | Review model |
+| ----- | -------------- | --------------- | ------------ |
+| Marketing strategy | Opus | — | Opus |
+| Design system / style guide | Opus | — | Opus |
+| Auth + roles | Opus | Sonnet | Opus |
+| Public pages (Landing, Search, Detail) | Sonnet | Sonnet / Haiku | Sonnet |
+| Booking wizard | Opus | Sonnet | Opus |
+| Dosha quiz + consultation | Sonnet | Haiku | Sonnet |
+| User dashboard | Sonnet | Haiku | Sonnet |
+| Center admin portal | Sonnet | Sonnet | Opus |
+| Platform admin | Opus | Sonnet | Opus |
+| Deployment | Opus | Haiku | Opus |
+
+---
+
+## Strategy 2 — Ollama Worker (free local execution)
+
+Claude credits are expensive. Ollama runs locally and costs nothing. When a task is bounded enough to route to Haiku, it is usually also bounded enough to route to Ollama — at zero cost.
+
+The default posture for single-file execution: try Ollama first. Escalate to Haiku if Ollama output fails quality checks. Escalate to Sonnet if Haiku output fails.
+
+Research shows this achieves an additional **8–10x cost reduction** on top of model-tier routing for pure execution tasks.
+
+### Ollama role definitions
+
+**Claude (any tier) — supervisor**
+Plans, routes, judges output, makes architectural decisions. Never delegates to Ollama anything that crosses file boundaries or requires security reasoning.
+
+**Ollama (qwen3.5 9.7B) — worker**
+Executes well-defined, bounded tasks in a single file. Near-Claude-Haiku quality on clearly-specified tasks. Weakness: multi-file context and complex reasoning chains.
+
+### Task routing
+
+#### Route to Ollama (try before Haiku)
 
 | Task | Tool |
 | ---- | ---- |
 | Generate code for a specific file or function | `ollama_generate_code` / `ollama_generate_code_with_context` |
-| Review a file for bugs, correctness, style | `ollama_general_task` with file content in context |
-| Fix a specific bug | `ollama_fix_code` |
+| Fix a specific bug in one file | `ollama_fix_code` |
 | Refactor or clean up a module | `ollama_refactor_code` |
-| Write tests for a specific function or file | `ollama_write_tests` |
-| Explain what a file or function does | `ollama_explain_code` |
-| Draft documentation, copy, or content | `ollama_general_task` |
-| Structural review (architecture, naming, delivery risk) | `ollama_general_task` |
-| Single-file or well-scoped multi-file tasks | `ollama_generate_code_with_context` |
+| Write tests for a specific function | `ollama_write_tests` |
+| Review a file for bugs or style | `ollama_general_task` with file content |
+| Draft copy or documentation | `ollama_general_task` |
 
-### Keep in Claude (do not delegate)
+#### Keep in Claude (Sonnet or Opus — never Ollama)
 
-- Tasks spanning many files where reasoning must hold across all of them simultaneously
-- Security decisions (authentication, authorisation, data exposure)
-- Domain nuance requiring specialist knowledge (theology, legal, medical, compliance)
-- Synthesising results from multiple Ollama outputs into a single coherent decision
-- Final judgment on whether Ollama's output is correct, complete, and safe to ship
-- Anything the user has explicitly asked Claude to own
+- Tasks spanning many files where reasoning must hold across all of them
+- Security decisions (auth, authorisation, data exposure)
+- Synthesising results from multiple Ollama outputs
+- Final judgment on whether output is correct, complete, and safe
 
-**The routing heuristic:** if the task fits in one file with a clear spec, Ollama. If it requires holding the whole system in mind, Claude.
+### Pre-delegation checklist
 
----
+Before routing a task to Ollama, confirm it meets this gate:
 
-## Pre-delegation checklist
+- [ ] Task is specific — not "fix the search" but "add a `dosha` filter param to `/api/retreats` GET handler in `backend/routers/retreats.py` line 34"
+- [ ] Success criteria are explicit — define what done looks like
+- [ ] Constraints are stated — naming, patterns, forbidden approaches
+- [ ] Context files are identified — list specific files, not "everything"
 
-Before routing a task to Ollama, confirm it meets this gate. Vague tasks will fail.
-
-- [ ] **Task is specific.** Not "fix the dark mode" but "replace bg-parchment with bg-input-bg in JoinScreen inputs (lines 63, 78) and add dark: color classes to text elements"
-- [ ] **Success criteria are explicit.** Define what "done" looks like: "inputs render with proper contrast in both themes" or "config validates without errors"
-- [ ] **Constraints are stated.** Style, naming, conventions, forbidden patterns: "no pseudo-classes in color definitions", "match existing component patterns", "follow RFC 7231 for HTTP headers"
-- [ ] **Context files are identified.** What does Ollama need to read? List specific files or patterns, not "everything"
-- [ ] **Architecture is documented if complex.** For system-level tasks (config, patterns, scaffolding), include key constraints upfront: tech stack, key libraries, naming conventions
-
-**Quick template before delegating:**
+**Quick template:**
 
 ```text
 TASK: [specific objective]
@@ -70,101 +109,55 @@ CONTEXT: [affected files]
 OUTPUT: [format/location]
 ```
 
-If you can't fill all five fields, the task is not ready to delegate. Refine it first.
+### Hallucination detection
 
----
-
-## Hallucination detection
-
-Ollama will sometimes produce output completely unrelated to the task. Detect this immediately and escalate.
-
-**Hallucination checklist (run after Ollama returns output):**
+Run after every Ollama output:
 
 - [ ] Is the output relevant to the stated task?
 - [ ] Does it address the specific requirement?
-- [ ] Are all stated constraints met?
+- [ ] Are all constraints met?
 - [ ] Does it integrate with existing code?
 
 **Escalation thresholds:**
 
 | Symptom | Action |
 | --- | --- |
-| Minor deviation (e.g., missing optional field) | Retry with clarification |
-| Partial failure (e.g., got half the component right) | Retry with more context or stricter spec |
-| **Complete hallucination (wrong component, unrelated code)** | **Escalate immediately to Claude** |
-| Same failure 3+ times | Escalate + re-evaluate task routing |
+| Minor deviation | Retry with clarification |
+| Partial failure | Retry with more context |
+| Complete hallucination (wrong component, unrelated code) | Escalate to Haiku immediately |
+| Same failure 3+ times | Escalate to Sonnet + re-evaluate spec |
 
----
-
-## Prompt engineering for Ollama
-
-Simple file context is not enough. Include constraints and architecture explicitly.
-
-**Always include:**
-
-```markdown
-### Architecture Context
-- **Framework:** [e.g., React + Tailwind + TypeScript]
-- **Conventions:** [naming, patterns, style rules]
-- **Key constraints:** [forbidden patterns, must-respect rules]
-- **File structure:** [brief overview if relevant]
-
-### Task
-- **What:** [specific objective]
-- **Why:** [brief reason/context]
-- **Constraints:** [explicit rules and limits]
-- **Success:** [how to verify it works]
-
-### Examples (if available)
-- Similar working code
-- Pattern to follow
-```
-
----
-
-## Retry and escalation thresholds
+### Retry ladder
 
 ```text
-Attempt 1:  Ollama with the basic prompt
-Attempt 2:  Ollama with more context (add relevant files, examples, constraints)
-Attempt 3:  Claude generates → Ollama reviews the output
-Attempt 4+: Tell the user what Ollama produced and why it's insufficient
+Attempt 1:  Ollama — basic prompt
+Attempt 2:  Ollama — more context, stricter spec
+Attempt 3:  Haiku — Claude-native with same spec
+Attempt 4:  Sonnet — if Haiku also fails, task is too complex for the spec
 ```
 
-Do not retry the same prompt more than twice. If Ollama fails twice on the same task, the task is likely too complex or underspecified for Ollama — either tighten the spec or escalate to Claude.
+Do not retry the same prompt more than twice at any tier.
 
 ---
 
-## Context management
+## Combined pattern for every coding task
 
-**Ollama model:** qwen3.5 (9.7B, Q4_K_M quantization)
-
-- **Context window:** 262,144 tokens (massive — larger than Claude's limit)
-- **Capabilities:** completion, vision, tools, thinking
-- **Practical limit:** For code tasks, aim for 20–50k tokens of context
-
-**Strategy:** Ollama's enormous context window means you can pass entire modules or multiple related files at once without worry. Don't artificially split large tasks into tiny fragments.
-
-**Guideline:** If you're hesitating to pass a file because it's "too much context," pass it. Ollama won't choke on it. The only reason to split is semantic — the task is too broad and needs decomposition first.
-
----
-
-## Tool rules
-
-**Use `ollama_general_task` not `ollama_review_file`.**
-`ollama_review_file` is unreliable on Windows paths. Always pass file content as a string in the `context` field of `ollama_general_task`.
-
-**Never spawn parallel Claude sub-agents for reviews.**
-One `ollama_general_task` call does the same job at zero cost. Parallel Claude agents are the single most expensive operation in this workflow — avoid unless the user explicitly requests a multi-perspective review.
-
-**If `ollama_generate_code_with_context` returns empty output:**
-This is a tool reliability issue, not a signal to skip Ollama. Generate in Claude, then pass the output to `ollama_general_task` for review.
+```text
+1. Opus:   read context, plan the phase, decompose into bounded tasks
+2. Opus:   route each task — Ollama/Haiku for execution, Sonnet for complex, Opus for synthesis
+3. Worker: execute (Ollama first, escalate up the ladder as needed)
+4. Opus:   read output, check against acceptance criteria
+5.         If acceptable → write to disk, run type-check, move on
+6.         If not → retry with more context (max 2 retries per tier), then escalate
+7. Sonnet: one review pass after each phase before Opus closes it
+8. Opus:   synthesise phase output, plan the next phase
+```
 
 ---
 
-## Verification by language
+## Verification after every worker output
 
-Run the appropriate check after every Ollama output before shipping:
+Run the appropriate check before treating output as done:
 
 | Language | Command |
 | -------- | ------- |
@@ -175,25 +168,23 @@ Run the appropriate check after every Ollama output before shipping:
 
 ---
 
-## Pattern for every coding task
+## Tool rules (Ollama-specific)
 
-```text
-1. Claude: read context, plan the approach, decompose into bounded tasks
-2. Claude: route each task — Ollama for execution, Claude for synthesis
-3. Ollama: execute (generate / review / fix / test)
-4. Claude: read Ollama output, check against acceptance criteria
-5. If acceptable: write to disk, run type-check, move on
-6. If not acceptable: retry with more context (max 2 retries), then escalate
-7. After each phase: one Ollama review pass before starting the next phase
-8. Claude: synthesise phase output and plan the next phase
-```
+**Use `ollama_general_task` not `ollama_review_file`.**
+`ollama_review_file` is unreliable on Windows paths. Always pass file content as a string in the `context` field of `ollama_general_task`.
+
+**Never spawn parallel Claude sub-agents for reviews.**
+One `ollama_general_task` call does the same job at zero cost.
+
+**If `ollama_generate_code_with_context` returns empty output:**
+Generate in Claude (Haiku), then pass the output to `ollama_general_task` for review.
+
+**Ollama context window:** qwen3.5 has 262k tokens. Pass entire modules freely — split only when the task is semantically too broad, not because you're worried about context size.
 
 ---
 
 ## When Ollama is unavailable
 
-If Ollama tools return errors or empty output consistently:
-
 1. `ollama list` — confirm Ollama is running and the model is available
-2. `ollama run <model> "hello"` — confirm the model responds
-3. Fall back to Claude for that session
+2. `ollama run qwen3.5 "hello"` — confirm the model responds
+3. Fall back to Haiku for that session; note which tasks are pending so the pattern resumes when Ollama is restored

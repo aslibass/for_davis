@@ -63,6 +63,11 @@ All skills live in `.claude/skills/`. Read the relevant SKILL.md to invoke.
 | `style-guide.md` exists with Panel critique section | Any CSS or UI code |
 | Auth flow tested end-to-end | Booking wizard |
 | Booking creation works without payment | Stripe integration |
+| Stripe webhook signature verification implemented | Stripe payment processing |
+| Retreat detail pages have title, description, OG tags, JSON-LD | Phase 9 deployment |
+| SEO: sitemap.xml and robots.txt routes exist | Phase 9 deployment |
+| Keyboard navigation works; focus rings visible; ARIA labels on controls | Phase 7 QA |
+| axe-core audit: zero violations on all pages | Phase 9 deployment |
 | Center admin can only see their own data | Admin portal |
 | All admin routes reject non-admin roles | Deployment |
 | Health check `/health` returns 200 | Railway deployment |
@@ -138,12 +143,16 @@ Never commit these. Set in Railway dashboard.
 
 | Variable | Service | Notes |
 |---|---|---|
-| `JWT_SECRET` | Backend | Long random string |
-| `STRIPE_SECRET_KEY` | Backend | From Stripe dashboard |
-| `STRIPE_WEBHOOK_SECRET` | Backend | From Stripe webhook config |
+| `JWT_SECRET` | Backend | Long random string (min 32 chars) |
+| `STRIPE_SECRET_KEY` | Backend | From Stripe dashboard (sk_test_...) |
+| `STRIPE_WEBHOOK_SECRET` | Backend | From Stripe webhook config (whsec_...) |
 | `VITE_API_URL` | Frontend | Set before first deploy — baked at build time |
-| `VITE_STRIPE_PK` | Frontend | Stripe publishable key |
+| `VITE_STRIPE_PK` | Frontend | Stripe publishable key (pk_test_...) |
 | `ALLOWED_ORIGINS` | Backend | Exact frontend URL with `https://` |
+| `RESEND_API_KEY` | Backend | Resend email service API key (re_...) |
+| `EMAIL_FROM` | Backend | Sender email address (e.g., bookings@yourdomain.com) |
+| `PORT` | Backend | Railway sets automatically; local dev defaults to 8000 |
+| `DATABASE_URL` | Backend | Leave blank for SQLite; set for Railway Postgres |
 
 ---
 

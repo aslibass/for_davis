@@ -31,8 +31,8 @@ Target audience (from marketing strategy): serious wellness seekers who want aut
 | `frontend-design` | Phase 0 — before any CSS. Produces `style-guide.md`. |
 | `ollama-supervisor` | Every coding session — route execution to Ollama. |
 | `theme-factory` | Phase 0 — starting palette reference before diverging. |
-| `webapp-testing` | Phases 3–7 — QA after each major page build. |
-| `railway-deploy` | Phase 8 — deployment readiness audit. |
+| `webapp-testing` | Phases 3–8 — QA after each major page build (including admin routes). |
+| `railway-deploy` | Phase 9 — deployment readiness audit. |
 
 ---
 
@@ -140,6 +140,7 @@ reviews (
 /compare                   Side-by-side retreat comparison (up to 3)
 /quiz                      Dosha quiz → personalised retreat recommendations
 /consultation              "Help me find my retreat" concierge request
+/list-your-retreat-center  Center application landing page (Gap 8)
 
 /auth/login                Email sign-in
 /auth/register             Email sign-up
@@ -187,12 +188,18 @@ GET  /api/compare?ids=a,b,c            side-by-side data for up to 3 retreats
 POST /api/quiz/result                  submit dosha quiz → return matched retreat slugs
 
 POST /api/consultations
+POST /api/center-admin/apply           Center application form submission (Gap 8)
+
 POST /api/bookings                     → create pending booking + Stripe checkout session
 GET  /api/bookings                     user's own bookings
 GET  /api/bookings/:id
 POST /api/reviews                      post-stay review (requires completed booking)
 
 POST /api/payments/webhook             Stripe → confirm booking
+
+# SEO (Gap 4)
+GET  /sitemap.xml                      Sitemap for search engines
+GET  /robots.txt                       Robots file
 
 # Center admin (requires role=center_admin + owns the center)
 GET  /api/center-admin/center
@@ -267,29 +274,67 @@ PATCH /api/admin/consultations/:id
 4. `CenterProfile.tsx` — center about, certifications, all their retreats
 5. `Compare.tsx` — side-by-side up to 3 retreats (add from detail page)
 
+**SEO (Gap 4):**
+- Add `<title>` (< 60 chars), `<meta name="description">` (120–155 chars), OG tags to all pages
+- JSON-LD structured data: `LodgingBusiness` (retreat centers), `LodgingReservation` (bookings), `Review` (guest reviews)
+- `GET /sitemap.xml` backend route (all retreat + center URLs)
+- `GET /robots.txt` — allow crawlers, link to sitemap
+- Canonical tags on paginated search results
+
+**Accessibility (Gap 6):**
+- Keyboard navigation throughout (tab order, never trap focus)
+- Focus rings visible and never removed
+- ARIA labels on all filter controls, search inputs, custom selects
+- Skip-to-content link in header layout
+- Run axe-core audit before Phase 9 — zero violations floor
+
 ### Phase 4 — Dosha Quiz + Consultation
 1. `DoshaQuiz.tsx` — 8-10 question quiz → scored → retreat type recommendation
 2. `Consultation.tsx` — concierge form: budget, duration, health goals, dosha, dates
 
+**Email (Gap 5):**
+- `POST /api/consultations` → send acknowledgement email to submitter (Resend SDK)
+
 ### Phase 5 — Booking Wizard
+
+**CRITICAL — Stripe Architecture Decision (Gap 7):**
+Before implementing Phase 5, lock this decision in `decisions.md`:
+- **Option A (chosen for MVP):** Direct charge. Seeker pays full price to platform. Platform pays centers separately (offline or ACH). Stripe Checkout only, no Stripe Connect.
+- Webhook signature verification is MANDATORY: verify `stripe-signature` header on every `POST /api/payments/webhook` call
+- Orphaned `pending_payment` cleanup: background job cancels bookings stuck in `pending_payment` for > 2 hours
+- No Stripe Customer object in MVP (add in v2 for saved cards)
+
+**Implementation:**
 1. `BookingWizard.tsx` — shell from WorkshopShell; step in URL param
 2. Step 1: guest count, special requests, accessibility needs
 3. Step 2: health intake (dosha self-assessment, medical conditions, dietary, goals)
 4. Step 3: review summary + Stripe Checkout redirect
 5. `BookingSuccess.tsx` — confirmation with booking details
-6. Stripe webhook → update booking `status = confirmed`
+6. Stripe webhook → verify signature → update booking `status = confirmed`
+
+**Email (Gap 5):**
+- Booking confirmed (Step 3 → Stripe Checkout):
+  - Email to seeker: booking confirmation, confirmation number, health intake summary, retreat details
+  - Email to center admin: new booking notification, guest name + phone + health intake, booking ID
+- Use Resend SDK for all sends
 
 ### Phase 6 — Seeker Dashboard
 1. `Dashboard.tsx` — upcoming retreats, past bookings, saved retreats, profile
 2. Booking card: retreat name + center, dates, status badge, review CTA (post-stay)
 3. Review submission flow
 
-### Phase 7 — Center Admin Portal
+### Phase 7 — Center Admin Portal + Supply-Side Onboarding
 1. Center dashboard with booking overview
 2. Retreat CRUD (create/edit/archive programs)
 3. Date slot management
 4. Booking list view (read-only, with guest health intake)
 5. Review response
+
+**Center Onboarding (Gap 8):**
+- `GET /list-your-retreat-center` — public landing page for centers (marketing page explaining platform)
+- `POST /api/center-admin/apply` — application form (name, location, description, certifications, contact)
+- Center registers as `role=center_admin` user, submits form, waits for platform admin approval
+- Approval in Phase 8 admin queue sends approval email (Gap 5) and opens access to center admin portal
 
 ### Phase 8 — Platform Admin
 1. Center application approval queue
@@ -297,11 +342,14 @@ PATCH /api/admin/consultations/:id
 3. All bookings table (exportable)
 4. Consultation queue with assignment/status
 
+**Email (Gap 5):**
+- Center approval: send approval email with next steps and portal login link
+
 ### Phase 9 — Deployment
 1. Invoke `/railway-deploy` skill
 2. Two Railway services: `backend/` and `frontend/`
 3. `railway.toml` in each subdirectory
-4. Environment variables: `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_API_URL`, `ALLOWED_ORIGINS`
+4. Environment variables: `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `VITE_API_URL`, `VITE_STRIPE_PK`, `ALLOWED_ORIGINS`, `DATABASE_URL` (Postgres optional)
 5. Health check endpoint `/health` on backend
 
 ---
@@ -309,10 +357,14 @@ PATCH /api/admin/consultations/:id
 ## Verification Plan
 
 - Phase 3 → `/run` to walk landing, search, and detail pages in browser
+  - Verify meta tags present in HTML (open DevTools, check `<head>`)
+  - Verify all public pages have skip-to-content link and keyboard navigation works
 - Phase 5 → `/verify` full booking flow with Stripe test card (4242 4242 4242 4242)
-- Phase 7 → `/code-review` security focus — center admin can only see their own data
-- Phase 8 → `/code-review` platform admin only — no seeker can access admin routes
-- Phase 9 → `/verify` Railway deployment health check
+- Phase 5 → `/verify` booking confirmation emails sent to seeker + center
+- Phase 4 → `/verify` consultation acknowledgement email sent
+- Phase 7 → `/code-review` security focus — center admin can only see their own data; accessibility check (axe-core clean)
+- Phase 8 → `/code-review` platform admin only — no seeker can access admin routes; center approval email sent
+- Phase 9 → `/verify` Railway deployment health check (`/health` returns 200)
 
 ---
 

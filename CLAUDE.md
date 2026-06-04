@@ -48,10 +48,12 @@ All skills live in `.claude/skills/`. Read the relevant SKILL.md to invoke.
 | Skill file | When to use |
 |---|---|
 | `frontend-design-SKILL.md` | Phase 0 — design system, style guide, expert panel |
-| `ollama-supervisor-SKILL.md` | Every coding session — cost reduction via Ollama routing |
-| `railway-deploy-SKILL.md` | Phase 9 — deployment readiness audit |
+| `ollama-supervisor-SKILL.md` | Every coding session — cost reduction via Opus/Sonnet/Haiku + Ollama |
 | `theme-factory/SKILL.md` | Phase 0 — pre-built palette starting points |
+| `seo-landing-pages/SKILL.md` | Phase 3 — SEO-optimized landing pages with JSON-LD |
+| `schema-markup-generator/SKILL.md` | Phase 3 — Generate JSON-LD for retreat detail, center, review pages |
 | `webapp-testing/SKILL.md` | Phases 3–8 — browser QA with Playwright |
+| `railway-deploy-SKILL.md` | Phase 9 — deployment readiness audit |
 
 ---
 

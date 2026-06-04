@@ -82,6 +82,26 @@ Append-only log of major design and architectural decisions. All reversible deci
 
 ---
 
+## 2026-06-04 — Community SEO Skills Adoption
+
+**Topic:** Use pre-built community SEO skills for Phase 3 instead of custom implementation
+
+**Decision:** Adopt two battle-tested community SEO skills from official and community repos:
+1. `seo-landing-pages` (from anthropics/skills) — SEO-optimized landing pages with JSON-LD
+2. `schema-markup-generator` (from aaron-he-zhu/seo-geo-claude-skills) — JSON-LD generation for retreat listings
+
+**Rationale:** Discovery-first platform requires strong SEO foundation. Rather than researching schema types, OG best practices, and canonical patterns from scratch, these skills provide proven implementations. Saves weeks of research, reduces errors, and ensures compliance with Google's latest schema deprecations (as of Jan 2026).
+
+**Implementation:** Use `seo-landing-pages` skill to scaffold landing page (Phase 3, step 1). Use `schema-markup-generator` skill for retreat detail, center profile, and review pages (Phase 3, steps 3–4). Both skills available globally and in project `.claude/skills/`.
+
+**Alternatives considered:**
+- Custom implementation: more control, but higher risk of schema errors and lower SEO performance
+- Third-party SEO tools (Yoast, Ahrefs): vendor lock-in, higher cost
+
+**Panel sign-off:** Viren — approved for Phase 3 build
+
+---
+
 ## 2026-06-04 — SEO Strategy (Discovery-First Platform)
 
 **Topic:** Organic search positioning for retreat discovery

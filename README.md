@@ -214,15 +214,24 @@ All skills are designed to be reusable in other projects. Copy them:
 cp .claude/skills/*.md C:\Users\viren\.claude\skills\
 cp -r .claude/skills/theme-factory C:\Users\viren\.claude\skills\
 cp -r .claude/skills/webapp-testing C:\Users\viren\.claude\skills\
+cp -r .claude/skills/seo-landing-pages C:\Users\viren\.claude\skills\
+cp -r .claude/skills/schema-markup-generator C:\Users\viren\.claude\skills\
 ```
+
+All 7 skills are already in the global directory and ready for other projects.
 
 ### Skills Included
 
+**Custom skills for this project:**
 1. **frontend-design-SKILL.md** — Design system creation with expert panel (Fox/Spiekermann/Bierut/Chimero)
 2. **ollama-supervisor-SKILL.md** — Two-tier cost optimization (Opus/Sonnet/Haiku routing + Ollama fallback)
 3. **railway-deploy-SKILL.md** — Railway deployment config and audit
 4. **theme-factory/** — 10 pre-built design theme palettes (Forest Canopy, Botanical Garden, Desert Rose, etc.)
 5. **webapp-testing/** — Playwright browser testing with managed server lifecycle
+
+**Community skills (fetched from Anthropic + open-source repos):**
+6. **seo-landing-pages/** — SEO-optimized landing pages with JSON-LD structured data (anthropics/skills)
+7. **schema-markup-generator/** — JSON-LD generation for retreats, centers, reviews (aaron-he-zhu/seo-geo-claude-skills)
 
 ---
 

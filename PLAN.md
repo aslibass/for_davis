@@ -31,6 +31,8 @@ Target audience (from marketing strategy): serious wellness seekers who want aut
 | `frontend-design` | Phase 0 — before any CSS. Produces `style-guide.md`. |
 | `ollama-supervisor` | Every coding session — route execution to Ollama. |
 | `theme-factory` | Phase 0 — starting palette reference before diverging. |
+| `seo-landing-pages` | Phase 3 — SEO-optimized landing page with JSON-LD structured data. |
+| `schema-markup-generator` | Phase 3 — Generate JSON-LD for retreat detail, center profile, review pages. |
 | `webapp-testing` | Phases 3–8 — QA after each major page build (including admin routes). |
 | `railway-deploy` | Phase 9 — deployment readiness audit. |
 
@@ -268,15 +270,15 @@ PATCH /api/admin/consultations/:id
 4. Route guard components: `RequireAuth`, `RequireRole`
 
 ### Phase 3 — Discovery UX (public pages)
-1. `Landing.tsx` — search hero, dosha quiz CTA, featured retreats, "why us" strip
+1. `Landing.tsx` — use `seo-landing-pages` skill for SEO-optimized landing with JSON-LD
 2. `RetreatSearch.tsx` — results grid + filter panel (location, duration, dosha, price range, dates)
-3. `RetreatDetail.tsx` — photo gallery, description, dates picker, reviews, "Book" + "Save" CTAs
-4. `CenterProfile.tsx` — center about, certifications, all their retreats
+3. `RetreatDetail.tsx` — use `schema-markup-generator` skill for LodgingBusiness + Review JSON-LD
+4. `CenterProfile.tsx` — use `schema-markup-generator` for Organization + LocalBusiness JSON-LD
 5. `Compare.tsx` — side-by-side up to 3 retreats (add from detail page)
 
-**SEO (Gap 4):**
-- Add `<title>` (< 60 chars), `<meta name="description">` (120–155 chars), OG tags to all pages
-- JSON-LD structured data: `LodgingBusiness` (retreat centers), `LodgingReservation` (bookings), `Review` (guest reviews)
+**SEO (Gap 4) — Skills-First Approach:**
+- Use `seo-landing-pages` skill: scaffolds landing with meta/OG tags, JSON-LD structure
+- Use `schema-markup-generator` skill: generates JSON-LD for `LodgingBusiness` (centers), `LodgingReservation` (bookings), `Review` (guest reviews)
 - `GET /sitemap.xml` backend route (all retreat + center URLs)
 - `GET /robots.txt` — allow crawlers, link to sitemap
 - Canonical tags on paginated search results

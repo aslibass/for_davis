@@ -11,20 +11,18 @@ Complete every section below. Then run the three-panel critique (Dunford / Ritso
 **What category does this platform exist in?**
 (e.g., "Ayurvedic wellness travel booking" — be specific, not "wellness" or "travel")
 
-> _Fill here_
+Ayurveda Wellness travel and booking. The platform is an Ayurveda Channel & Booking Management Platform.
 
-**What do seekers currently do instead?**
+**The platform is meant for Travel agents and Properties**
 (The alternatives you are being compared to — not just competitors, but the whole job-to-be-done landscape)
 
-> - Option 1: _e.g., Google individual retreat centers and visit their websites_
-> - Option 2: _e.g., Use generic booking sites (Booking.com, Airbnb Experiences)_
-> - Option 3: _e.g., Ask in Facebook/Reddit wellness communities_
-> - Option 4: _e.g., Pay a wellness travel agent_
-> - Do nothing: _e.g., Keep meaning to go but never commit_
+> - Option 1: Travel Agent, with request from customer, approaches multiple properties. Each requires an e-mail/whatsapp/call etc back-and-forth regarding availability of rooms check (for each request received from a customer. Availability changes based on gender of guest as therapists are allotted a guest only of the same gender). Currently there exists no live room inventory system (except for 1 on Google Sheets).
+> On the Property side, they need 
+> - Option 5: 
 
 ---
 
-## 2. Primary Audience — The Seeker
+## 2. Primary Audience — The Travel Agent and The Property
 
 **Who is the primary audience we are optimising for?**
 Choose one segment to build the platform for first. You can expand later.

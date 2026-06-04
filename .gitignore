@@ -1,0 +1,58 @@
+# Environment variables — never commit
+.env
+.env.local
+.env.production
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+.python-version
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Railway / Docker (secrets only — keep railway.toml)
+railway.env
+
+# Stripe webhook secret (use Railway env vars)
+stripe_webhook_secret.txt
+
+# Test artifacts
+/tmp/
+playwright-report/
+test-results/
+*.png
